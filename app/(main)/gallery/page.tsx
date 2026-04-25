@@ -2,27 +2,35 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { saveAs } from "file-saver";
-import { Download, Trash2, Images, ImageIcon } from "lucide-react";
+import { Download, Trash2, Images, ImageIcon, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-import type { GalleryItem } from "@/app/(main)/page";
+import type { GalleryItem } from "@/types";
 
-const GALLERY_KEY = "decovision_gallery";
+export const GALLERY_KEY = "decovision_gallery";
 
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString(undefined, {
-    month: "short", day: "numeric", year: "numeric",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
   });
+}
+
+function downloadImage(item: GalleryItem) {
+  const link = document.createElement("a");
+  link.href = item.outputImage;
+  link.download = `decovision-${item.theme}-${item.room}-${item.id}.jpg`;
+  link.click();
 }
 
 export default function GalleryPage() {
   const [items, setItems] = useState<GalleryItem[]>([]);
   const [loaded, setLoaded] = useState(false);
 
-  useEffect(() => {
+  const loadFromStorage = () => {
     try {
       const stored = JSON.parse(localStorage.getItem(GALLERY_KEY) ?? "[]");
       setItems(stored);
@@ -30,11 +38,18 @@ export default function GalleryPage() {
       setItems([]);
     }
     setLoaded(true);
-  }, []);
-
-  const handleDownload = (item: GalleryItem) => {
-    saveAs(item.outputImage, `decovision-${item.theme}-${item.room}-${item.id}.png`);
   };
+
+  useEffect(() => {
+    loadFromStorage();
+
+    // Also listen for storage changes (if user generates while gallery is open in another tab)
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === GALLERY_KEY) loadFromStorage();
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, []);
 
   const handleDelete = (id: string) => {
     const updated = items.filter((i) => i.id !== id);
@@ -67,15 +82,22 @@ export default function GalleryPage() {
           <Images className="text-primary h-5 w-5" />
           <h1 className="text-xl font-semibold">My Gallery</h1>
           {items.length > 0 && (
-            <Badge variant="secondary">{items.length} design{items.length !== 1 ? "s" : ""}</Badge>
+            <Badge variant="secondary">
+              {items.length} design{items.length !== 1 ? "s" : ""}
+            </Badge>
           )}
         </div>
-        {items.length > 0 && (
-          <Button variant="outline" size="sm" onClick={handleClearAll}>
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-            Clear all
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" onClick={loadFromStorage} title="Refresh">
+            <RefreshCw className="h-3.5 w-3.5" />
           </Button>
-        )}
+          {items.length > 0 && (
+            <Button variant="outline" size="sm" onClick={handleClearAll}>
+              <Trash2 className="mr-1.5 h-3.5 w-3.5" />
+              Clear all
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Empty state */}
@@ -106,6 +128,7 @@ export default function GalleryPage() {
                     alt={`${item.theme} ${item.room}`}
                     fill
                     className="object-cover transition-transform duration-300 group-hover:scale-105"
+                    unoptimized // needed for base64/data-url images
                   />
                   {/* Overlay on hover */}
                   <div className="absolute inset-0 flex items-end justify-between bg-gradient-to-t from-black/60 via-transparent to-transparent p-3 opacity-0 transition-opacity duration-200 group-hover:opacity-100">
@@ -122,7 +145,8 @@ export default function GalleryPage() {
                         size="icon"
                         variant="secondary"
                         className="h-7 w-7"
-                        onClick={() => handleDownload(item)}
+                        onClick={() => downloadImage(item)}
+                        title="Download"
                       >
                         <Download className="h-3.5 w-3.5" />
                       </Button>
@@ -131,6 +155,7 @@ export default function GalleryPage() {
                         variant="destructive"
                         className="h-7 w-7"
                         onClick={() => handleDelete(item.id)}
+                        title="Delete"
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -149,9 +174,13 @@ export default function GalleryPage() {
                     </Badge>
                   </div>
                   {item.userPrompt && (
-                    <p className="text-muted-foreground truncate text-xs">{item.userPrompt}</p>
+                    <p className="text-muted-foreground truncate text-xs">
+                      {item.userPrompt}
+                    </p>
                   )}
-                  <p className="text-muted-foreground text-xs">{formatDate(item.createdAt)}</p>
+                  <p className="text-muted-foreground text-xs">
+                    {formatDate(item.createdAt)}
+                  </p>
                 </div>
               </CardContent>
             </Card>

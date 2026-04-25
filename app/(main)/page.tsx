@@ -26,19 +26,42 @@ const DEFAULT_ROOM_DETAILS: RoomDetails = {
   prompt: "",
 };
 
-const GALLERY_KEY = "decovision_gallery";
+export const GALLERY_KEY = "decovision_gallery";
 
-function saveToGallery(item: GalleryItem) {
+// Resize a base64 image down to a small thumbnail for localStorage
+function createThumbnail(base64: string, maxSize = 400): Promise<string> {
+  return new Promise((resolve) => {
+    const img = new window.Image();
+    img.onload = () => {
+      const scale = Math.min(maxSize / img.width, maxSize / img.height, 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      // JPEG at 0.7 quality keeps thumbnails under 30KB each
+      resolve(canvas.toDataURL("image/jpeg", 0.7));
+    };
+    img.onerror = () => resolve(base64); // fallback: use original
+    img.src = base64;
+  });
+}
+
+async function saveToGallery(item: GalleryItem) {
   try {
+    // Store a small thumbnail — full images are too large for localStorage (5MB limit)
+    const thumbnail = await createThumbnail(item.outputImage);
+    const galleryItem: GalleryItem = { ...item, outputImage: thumbnail };
+
     const existing: GalleryItem[] = JSON.parse(
       localStorage.getItem(GALLERY_KEY) ?? "[]"
     );
     localStorage.setItem(
       GALLERY_KEY,
-      JSON.stringify([item, ...existing].slice(0, 50))
+      JSON.stringify([galleryItem, ...existing].slice(0, 50))
     );
-  } catch {
-    // storage might be full — silently skip
+  } catch (err) {
+    console.warn("Gallery save failed:", err);
   }
 }
 
@@ -132,7 +155,8 @@ export default function HomePage() {
         setGenerationDone(true);
         toast.success("Design generated successfully!");
 
-        saveToGallery({
+        // Save to gallery (async thumbnail creation)
+        await saveToGallery({
           id: Date.now().toString(),
           outputImage: result,
           theme: selectedTheme,
@@ -188,6 +212,7 @@ export default function HomePage() {
               {isTextOnlyMode ? "Describe your room" : "Additional description (optional)"}
             </Label>
             <Textarea
+              suppressHydrationWarning
               placeholder={
                 isTextOnlyMode
                   ? "e.g. a cozy living room with a fireplace, large windows, and warm wooden tones..."

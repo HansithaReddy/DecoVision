@@ -1,91 +1,187 @@
-# Interior Designer AI
+# DecoVision
 
-![interior-design-image](public/app-screenshot.png)
+> AI-powered interior design — redesign any room from a photo or a text description
 
-A modern, AI-powered application for transforming interior spaces with cutting-edge design. Upload a photo of your room and get a redesigned space in seconds.
+DecoVision lets you transform any room using AI. Upload a photo and watch it get redesigned in your chosen style, or simply describe your dream space in text and let the AI build it from scratch. Every generated design is automatically scored for layout feasibility and environmental sustainability.
+
+---
 
 ## Features
 
-- **Modern UI** with glassmorphism effects and fluid animations
-- **AI-Powered Design** transformation using Replicate API
-- **Multiple Design Styles** including Modern, Vintage, Minimalist, and Professional
-- **Various Room Types** such as Living Room, Dining Room, Bedroom, Bathroom, and Office
-- **Responsive Design** that works on both desktop and mobile devices
+- **Two generation modes**
+  - **Room Redesign** — upload a room photo and transform it into a new style
+  - **Text-to-Design** — describe your ideal room and generate it from scratch
+- **8 Design Themes** — Modern, Minimalist, Scandinavian, Industrial, Bohemian, Traditional, Coastal, Mid-Century Modern
+- **7 Room Types** — Living Room, Bedroom, Bathroom, Kitchen, Dining Room, Home Office, Kids Room
+- **Feasibility & Sustainability Scoring** — every design is analysed across 9 weighted factors covering room dimensions, furniture density, walkable clearance, lighting efficiency, and eco-friendly materials
+- **Design Gallery** — all generated designs are automatically saved and browsable with download and delete support
+- **Dark / Light / System theme** — full theme switching via next-themes
+- **Responsive** — works on desktop and mobile
 
-## How to use
+---
 
-### 1. Clone this project's repository
+## Tech Stack
 
-In your Terminal app
+| Layer | Technology |
+|---|---|
+| Framework | Next.js 16 (App Router) |
+| UI Library | React 19 + shadcn/ui + Radix UI |
+| Styling | Tailwind CSS 4 |
+| AI Image API | OpenAI gpt-image-1 |
+| Language | TypeScript 5 |
+| Runtime / Package Manager | Bun |
+| Deployment | Vercel |
+
+---
+
+## Getting Started
+
+### 1. Clone the repository
 
 ```bash
-# Clone the repo
-git clone git@github.com:siegblink/interior-designer-ai.git
+git clone https://github.com/HansithaReddy/DecoVision.git
+cd DecoVision
 ```
 
 ### 2. Install Bun (if not already installed)
 
-**Bun** is a fast JavaScript runtime and package manager. Install it using:
-
 ```bash
-# macOS/Linux
+# macOS / Linux
 curl -fsSL https://bun.sh/install | bash
 
 # Windows
 powershell -c "irm bun.sh/install.ps1 | iex"
 ```
 
-For more installation options, visit [https://bun.sh/docs/installation](https://bun.sh/docs/installation)
+### 3. Install dependencies
 
-### 3. Install the project dependencies
-
-Go to the project's directory
-
-- Type `cd interior-designer-ai`
-- Then, `bun install`
-
-### 4. Create an account at [replicate](https://replicate.com/)
-
-![create-account-in-replicate](public/create-account-in-replicate.png)
-
-### 5. Go to the _API tokens_ page within your replicate account
-
-![go-to-api-tokens](public/go-to-api-tokens.png)
-
-### 6. Create your API token and copy it
-
-![create-api-token](public/create-api-token.png)
-
-### 7. Rename the `.env.example` file to `.env.local`
-
-### 8. In `.env.local`, replace the placeholder _your_api_token_ with your API token
-
-```
-# Replace 'your-api-token' with your own API token from replicate
-REPLICATE_API_TOKEN=your-api-token
+```bash
+bun install
 ```
 
-### 9. Run the project
+### 4. Get an OpenAI API key
 
-Back in your Terminal in the project directory, type `bun dev`
+1. Go to [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+2. Sign in and click **Create new secret key**
+3. Copy the key — you won't be able to see it again
 
-### 10. See the running application in your browser at `localhost:3000`
+> Make sure your OpenAI account has access to the `gpt-image-1` model.
 
-![see-running-app](public/see-running-app.png)
+### 5. Set up environment variables
 
-## Technologies Used
+Create a `.env.local` file in the root of the project:
 
-- **Next.js 16** - React framework for production
-- **React 19** - UI component library
-- **Tailwind CSS 4** - Utility-first CSS framework
-- **shadcn/ui** - Accessible UI component library built on Radix UI
-- **cmdk** - Command menu for searchable dropdowns
-- **Replicate API** - For AI-powered design transformations
+```env
+OPENAI_API_KEY=sk-your-key-here
+```
 
-## Contributing
+### 6. Run the development server
 
-Contributions are welcome! Please check out our [contribution guidelines](CONTRIBUTING.md) first.
+```bash
+bun dev
+```
 
-## License
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-This project is open source and available under the [MIT License](LICENSE).
+---
+
+## Project Structure
+
+```
+DecoVision/
+├── app/
+│   ├── (main)/
+│   │   ├── gallery/
+│   │   │   └── page.tsx          # Gallery page
+│   │   ├── layout.tsx            # Sidebar + header shell
+│   │   └── page.tsx              # Main design page
+│   ├── api/
+│   │   ├── generate-design/
+│   │   │   └── route.ts          # OpenAI image generation endpoint
+│   │   └── predict-scores/
+│   │       └── route.ts          # Feasibility & sustainability scoring endpoint
+│   ├── globals.css
+│   └── layout.tsx                # Root layout (fonts, theme, metadata)
+├── components/
+│   ├── ui/                       # shadcn/ui primitives
+│   ├── app-sidebar.tsx           # Navigation sidebar (Design + Gallery)
+│   ├── design-controls.tsx       # Theme/room selectors + Generate button
+│   ├── image-dropzone.tsx        # Drag-and-drop room photo upload
+│   ├── output-image.tsx          # AI-generated design display
+│   ├── room-details-form.tsx     # Room dimensions, furniture, lighting inputs
+│   ├── score-panel.tsx           # Feasibility & sustainability score display
+│   ├── site-header.tsx           # Top header with sidebar toggle + theme switcher
+│   ├── theme-provider.tsx        # next-themes provider
+│   ├── theme-toggle.tsx          # Light / Dark / System toggle
+│   └── uploaded-image.tsx        # Uploaded room photo preview
+├── lib/
+│   ├── constants.ts              # ROOM_TYPES, DESIGN_THEMES
+│   ├── design-scorer.ts          # Scoring engine (feasibility + sustainability)
+│   └── utils.ts                  # cn() class merge utility
+├── types/
+│   └── index.ts                  # Shared TypeScript types
+├── hooks/
+│   └── use-mobile.ts             # Mobile detection hook
+└── vercel.json                   # Vercel deployment config
+```
+
+---
+
+## How the Scoring Works
+
+After every generation, DecoVision computes two scores between 0 and 100.
+
+### Feasibility Score
+Measures how practical the room layout is, based on 5 weighted factors:
+
+| Factor | Weight | What it checks |
+|---|---|---|
+| Furniture Density | 35% | Total furniture footprint vs room area |
+| Walking Clearance | 30% | Remaining floor space after furniture (min 20%) |
+| Room Proportions | 15% | Aspect ratio — penalises very narrow rooms |
+| Item Count | 10% | Number of items vs ideal (1 per 2.5 m²) |
+| Design Intent | 10% | Keywords in prompt: "open plan", "cramped", etc. |
+
+### Sustainability Score
+Measures the environmental impact of the design, based on 4 weighted factors:
+
+| Factor | Weight | What it checks |
+|---|---|---|
+| Material Eco-Score | 35% | Inferred from furniture names: bamboo/wood score high, plastic/PVC score low |
+| Lighting Efficiency | 30% | Natural = 100%, LED = 85%, Fluorescent = 55%, Incandescent = 30% |
+| Eco Design Intent | 25% | Keywords in prompt: "sustainable", "recycled", "biophilic", "eco-friendly" |
+| Style Alignment | 10% | Minimalist/Scandinavian score high; Luxury/Industrial score lower |
+
+Each score includes an expandable per-factor breakdown and a plain-language explanation.
+
+---
+
+## Usage
+
+### Room Redesign Mode
+1. Upload a photo of your room using the drag-and-drop zone
+2. Choose a **Design Theme** and **Room Type**
+3. Optionally add a description (e.g. "add more natural light")
+4. Fill in room dimensions, furniture, and lighting for scoring
+5. Click **Generate Design**
+6. View the redesigned room alongside feasibility and sustainability scores
+
+### Text-to-Design Mode
+1. Leave the photo upload empty
+2. Choose a **Design Theme** and **Room Type**
+3. Describe your ideal room in the text box
+4. Click **Generate Design**
+5. View the AI-generated room design and scores
+
+### Gallery
+All generated designs are automatically saved to your gallery. Navigate to **Gallery** in the sidebar to browse, download, or delete your designs.
+
+---
+
+## Deployment
+
+This project is configured for one-click deployment on Vercel.
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/HansithaReddy/DecoVision)
+
+After deploying, add `OPENAI_API_KEY` in your Vercel project's **Environment Variables** settings.

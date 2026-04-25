@@ -271,6 +271,7 @@ function SidebarTrigger({
         onClick?.(event);
         toggleSidebar();
       }}
+      suppressHydrationWarning
       {...props}
     >
       <PanelLeftIcon />

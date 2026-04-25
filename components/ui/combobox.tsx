@@ -59,6 +59,7 @@ export function Combobox<T extends string>({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
+          suppressHydrationWarning
           className={cn("w-full justify-between", className)}
         >
           {value || placeholder}
